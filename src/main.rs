@@ -1,5 +1,7 @@
 use std::io::{Read, Write};
 use std::net::{TcpStream, TcpListener};
+use std::process::Command;
+use std::str;
 
 #[derive(Default)]
 struct SmartSocket {
@@ -13,7 +15,11 @@ fn main() {
     let buf = b"get_power|||bar";
 
     let request = String::from_utf8_lossy(buf);
-        let x = request.split("|||");
+    let x = request.split("|||");
+
+    for s in x {
+        println!("{}", s);
+    }
 
     let mut socket:SmartSocket = Default::default();
 
@@ -44,7 +50,19 @@ fn process_stream(mut stream: TcpStream, socket: &SmartSocket) {
             break;
         }
 
-        let request = String::from_utf8_lossy(&buf);
-        let x = request.split("|||");
+        let command = str::as;
+        // let command = String::from_utf8(buf.to_vec())?;
+        // match command.as_str() {
+        //     "get_power" => foo1(),
+        //     _ => foo2(),
+        // }
     }
+}
+
+fn foo1() {
+
+}
+
+fn foo2() {
+
 }
