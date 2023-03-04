@@ -8,12 +8,14 @@ fn main() {
 
     let mut buf = vec![0u8; 128];
 
-    let commands: [i32; 6] = [1,2,0,2,1,2];
+    let commands: [i32; 8] = [2, 1, 2, 3, 0, 3, 1, 3];
     for command in commands {
-        stream.write_all(&command.to_be_bytes()).expect("fail to request");
+        stream
+            .write_all(&command.to_be_bytes())
+            .expect("fail to request");
         let n = stream.read(&mut buf).expect("fail to get reply");
-        let string = String::from_utf8_lossy(&buf[..n]);
-        println!("reply: {:?}", string);
+        let reply = String::from_utf8_lossy(&buf[..n]);
+        println!("reply: {:?}", reply);
         thread::sleep(Duration::from_secs_f32(0.5));
     }
 }
