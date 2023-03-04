@@ -1,34 +1,25 @@
 use std::io::{Read, Write};
-use std::net::{TcpStream, TcpListener};
-use std::process::Command;
-use std::str;
+use std::net::{TcpListener, TcpStream};
 
-#[derive(Default)]
 struct SmartSocket {
-    state: bool,
+    state: State,
     power: f32,
+}
+
+enum State {
+    On,
+    Off,
 }
 
 fn main() {
     println!("hello world!");
 
-    let buf = b"get_power|||bar";
-
-    let request = String::from_utf8_lossy(buf);
-    let x = request.split("|||");
-
-    for s in x {
-        println!("{}", s);
-    }
-
-    let mut socket:SmartSocket = Default::default();
+    let mut socket = SmartSocket {
+        state: State::Off,
+        power: 100.0,
+    };
 
     let listener = TcpListener::bind("127.0.0.1:5555").expect("bind failed");
-
-
-
-
-
 
     while let Some(stream) = listener.incoming().next() {
         if stream.is_err() {
@@ -38,31 +29,53 @@ fn main() {
         let stream = stream.unwrap();
         let peer = stream.peer_addr();
         println!("connected: {:?}", peer);
-        process_stream(stream, &socket);
+        process_stream(stream, &mut socket);
         println!("disconnected: {:?}", peer);
     }
 }
 
-fn process_stream(mut stream: TcpStream, socket: &SmartSocket) {
-    let mut buf = [0u8, 128];
+fn process_stream(mut stream: TcpStream, socket: &mut SmartSocket) {
+    let mut buf = [0u8; 4];
     loop {
-        if stream.read(&mut buf).is_err() {
+        if stream.read_exact(&mut buf).is_err() {
             break;
         }
 
-        let command = str::as;
-        // let command = String::from_utf8(buf.to_vec())?;
-        // match command.as_str() {
-        //     "get_power" => foo1(),
-        //     _ => foo2(),
-        // }
+        let request = u32::from_be_bytes(buf);
+        println!("request: {request}");
+
+        let reply = match request {
+            0 => socket.turn_off(),
+            1 => socket.turn_on(),
+            2 => socket.get_power(),
+            _ => unknown_request(),
+        };
+
+        if stream.write_all(&reply.as_bytes()).is_err() {
+            break;
+        }
     }
 }
 
-fn foo1() {
+impl SmartSocket {
+    fn turn_off(&mut self) -> String {
+        self.state = State::Off;
+        String::from("socket turned off")
+    }
 
+    fn turn_on(&mut self) -> String {
+        self.state = State::On;
+        String::from("socket turned on")
+    }
+
+    fn get_power(&self) -> String {
+        match &self.state {
+            State::On => format!("Consumption power: {} W", self.power),
+            State::Off => format!("Consumption power: {} W. Socket turned off", 0),
+        }
+    }
 }
 
-fn foo2() {
-
+fn unknown_request() -> String {
+    String::from("unknown command")
 }
